@@ -22,10 +22,17 @@ class thread_pool
 		while(!done) // 4
 		{
 			std::function<void()> task;
-			work_queue.wait_pop(task); // 5
-			task(); // 6
+			/* 这里不能使用wait_pop(),因为wait_pop的唤醒条件是，有push的调用，但如果线程池正常结束，push不会再触发，也就导致无法跳过wait_pop()，也就无法调用while(done)判断了，
+			work_queue.wait_pop(task); 大错误，
+			task(); 
+			*/
+			if(work_queue.try_pop(task)){
+				task();
+			}
+			else{
+				std::this_thread::yield();
+			}
 		}
-		
 	}
 	public:
 	thread_pool():
